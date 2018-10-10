@@ -71,7 +71,10 @@ class Table
         ];
     }
 
-
+    public function getDropTable(): string
+    {
+        return "DROP TABLE `$this->name`;\n";
+    }
 
     public function getCreateTable(): string
     {

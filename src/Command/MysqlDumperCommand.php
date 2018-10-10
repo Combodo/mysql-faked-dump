@@ -47,6 +47,8 @@ class MysqlDumperCommand extends Command
             ->setHelp('This command allows you to fake dump a mysql server using mysql dump...')
             ->addArgument('config', InputArgument::REQUIRED, 'the path to the yaml config file')
 //            ->addOption('config', null, InputOption::VALUE_REQUIRED)
+            ->addOption('add-drop-table', null, InputOption::VALUE_NONE, 'add drop table statements to the dump')
+            ->addOption('skip-create-table', null, InputOption::VALUE_NONE, 'remove create table statements to the dump')
         ;
     }
 
@@ -71,7 +73,18 @@ class MysqlDumperCommand extends Command
 
             $output->write("\n/**  writing table {$table->getName()}  */\n\n");
 
-            $output->writeln($table->getCreateTable());
+
+            if ($input->hasOption('add-drop-table')) {
+                $output->writeln($table->getDropTable());
+            } else {
+                $output->write("\n/**  add-drop-table not set, skipping drop table {$table->getName()}  */\n\n");
+            }
+
+            if (! $input->hasOption('skip-create-table')) {
+                $output->writeln($table->getCreateTable());
+            } else {
+                $output->write("\n/**  skip-create-table {$table->getName()}  */\n\n");
+            }
 
             /** @var TableInsertInto $insertInto */
             $insertInto = $table->getInsertInto();

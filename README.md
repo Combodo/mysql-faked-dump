@@ -22,6 +22,11 @@ or directly execute it :
 bin/console mysql-faked:dump path/to/file.yaml |  | mysql --host=remote_host -C db_name
 ```
 
+this command accept two options :
+ - add-drop-table
+ - skip-create-table
+ 
+
 ## configuration
 The configuration is written in yaml, it has tree main entries.
 
