@@ -1,0 +1,11 @@
+.idea/*
+.env
+config/local/*
+! config/local/.gitkeep
+
+###> symfony/framework-bundle ###
+/.env
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
