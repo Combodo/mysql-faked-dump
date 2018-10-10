@@ -75,9 +75,16 @@ class MysqlDumperCommand extends Command
 
             /** @var TableInsertInto $insertInto */
             $insertInto = $table->getInsertInto();
-            $output->write($insertInto->getInsertIntoBeginningString());
+
+            $first = true;
             while ($value = $insertInto->nextValue()) {
-                $output->write($value);
+                if (!$first) {
+                    $output->write(",$value");
+                } else {
+                    $output->write($insertInto->getInsertIntoBeginningString());
+                    $output->write($value);
+                    $first = false;
+                }
             }
             $output->write(";\n");
         }
