@@ -58,6 +58,8 @@ class MysqlDumperCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $io = new SymfonyStyle($input, $output);
+        $io->getErrorStyle()->writeln("\n\nStarting.\n");
+
         $config = $this->yamlConfigLoader->load(
             $input->getArgument('config')
         );
@@ -71,12 +73,12 @@ class MysqlDumperCommand extends Command
         foreach ($tablesCollection as $table) {
 
             if ($table->isExcluded()) {
-                $io->getErrorStyle()->warning("skipping table {$table->getName()}");
+                $io->getErrorStyle()->writeln("- skipping table {$table->getName()}");
                 $output->write("\n/**  skipping excluded {$table->getName()}  */\n\n");
                 continue;
             }
 
-            $io->getErrorStyle()->writeln("dumping table {$table->getName()}");
+            $io->getErrorStyle()->writeln("+ dumping table {$table->getName()}");
 
             $output->write("\n/**  writing table {$table->getName()}  */\n\n");
 
@@ -108,6 +110,6 @@ class MysqlDumperCommand extends Command
             }
             $output->write(";\n");
         }
-
+        $io->getErrorStyle()->writeln("\nDone.\n\n");
     }
 }
