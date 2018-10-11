@@ -47,8 +47,8 @@ class MysqlDumperCommand extends Command
             ->setHelp('This command allows you to fake dump a mysql server using mysql dump...')
             ->addArgument('config', InputArgument::REQUIRED, 'the path to the yaml config file')
 //            ->addOption('config', null, InputOption::VALUE_REQUIRED)
-            ->addOption('add-drop-table', null, InputOption::VALUE_NONE, 'add drop table statements to the dump')
-            ->addOption('skip-create-table', null, InputOption::VALUE_NONE, 'remove create table statements to the dump')
+            ->addOption('skip-drop-table', null, InputOption::VALUE_NONE, 'remove drop table statements from the dump')
+            ->addOption('skip-create-table', null, InputOption::VALUE_NONE, 'remove create table statements from the dump')
         ;
     }
 
@@ -70,6 +70,13 @@ class MysqlDumperCommand extends Command
 
         $tablesCollection = $this->tablesLoader->getTableCollection($config);
 
+        $output->writeln("
+/** mysql-faked-dump generated this file on ".date('F jS Y \\a\\t G:ia')." */        
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;");
+
         foreach ($tablesCollection as $table) {
 
             if ($table->isExcluded()) {
@@ -78,38 +85,49 @@ class MysqlDumperCommand extends Command
                 continue;
             }
 
-            $io->getErrorStyle()->writeln("+ dumping table {$table->getName()}");
+            $io->getErrorStyle()->write(str_pad("+ dumping table {$table->getName()}", 55, ' '));
 
-            $output->write("\n/**  writing table {$table->getName()}  */\n\n");
+            $output->write("\n\n/** begin TABLE {$table->getName()}  */\n");
 
-
-            if ($input->hasOption('add-drop-table')) {
+            if (! $input->hasOption('skip-drop-table')) {
                 $output->writeln($table->getDropTable());
             } else {
-                $output->write("\n/**  add-drop-table not set, skipping drop table {$table->getName()}  */\n\n");
+                $output->write("/**  skip-drop-table {$table->getName()}  */\n");
             }
 
             if (! $input->hasOption('skip-create-table')) {
                 $output->writeln($table->getCreateTable());
             } else {
-                $output->write("\n/**  skip-create-table {$table->getName()}  */\n\n");
+                $output->write("/**  skip-create-table {$table->getName()}  */\n");
             }
 
             /** @var TableInsertInto $insertInto */
             $insertInto = $table->getInsertInto();
 
-            $first = true;
+            $rowCount = 0;
             while ($value = $insertInto->nextValue()) {
-                if (!$first) {
+                if ($rowCount > 0) {
                     $output->write(",$value");
                 } else {
                     $output->write($insertInto->getInsertIntoBeginningString());
                     $output->write($value);
-                    $first = false;
                 }
+                $rowCount++;
             }
-            $output->write(";\n");
+            if ($rowCount > 0) {
+                $output->write(";\n");
+            }
+            $output->write("/** finished TABLE {$table->getName()} $rowCount rows dumped */\n");
+            $io->getErrorStyle()->writeln("| $rowCount rows");
+
         }
+
+        $output->writeln("
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;");
+
         $io->getErrorStyle()->writeln("\nDone.\n\n");
     }
 }
