@@ -78,7 +78,7 @@ class Table
 
     public function getDropTable(): string
     {
-        return "DROP TABLE `$this->name`;\n";
+        return "DROP TABLE IF EXISTS `$this->name`;\n";
     }
 
     public function getCreateTable(): string
