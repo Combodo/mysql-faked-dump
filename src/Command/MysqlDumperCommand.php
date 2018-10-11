@@ -69,6 +69,13 @@ class MysqlDumperCommand extends Command
         $tablesCollection = $this->tablesLoader->getTableCollection($config);
 
         foreach ($tablesCollection as $table) {
+
+            if ($table->isExcluded()) {
+                $io->getErrorStyle()->warning("skipping table {$table->getName()}");
+                $output->write("\n/**  skipping excluded {$table->getName()}  */\n\n");
+                continue;
+            }
+
             $io->getErrorStyle()->writeln("dumping table {$table->getName()}");
 
             $output->write("\n/**  writing table {$table->getName()}  */\n\n");

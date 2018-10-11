@@ -56,12 +56,12 @@ class Table
             return $config['tables'][$this->name];
         }
 
-        foreach ($config as $rule) {
+        foreach ($config['tables'] as $rule) {
             if (! array_key_exists('pattern', $rule)) {
                 continue;
             }
 
-            if (preg_match($rule['pattern'], $this->name)) {
+            if (preg_match("#{$rule['pattern']}#", $this->name)) {
                 return $rule;
             }
         }
@@ -69,6 +69,11 @@ class Table
         return [
             'exclude' => $config['options']['exclude_missing_tables']
         ];
+    }
+
+    public function isExcluded() : bool
+    {
+        return $this->rules['exclude'] ?? false;
     }
 
     public function getDropTable(): string
