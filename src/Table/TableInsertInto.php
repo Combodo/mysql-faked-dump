@@ -132,7 +132,12 @@ class TableInsertInto
                 continue;
             }
 
-            $fakedRow[$columnName] = $this->dataSource->getPdo()->quote($row[$columnName]);
+            if (null === $row[$columnName]) {
+                $fakedRow[$columnName] = 'NULL';
+            } else {
+                $fakedRow[$columnName] = $this->dataSource->getPdo()->quote($row[$columnName]);
+            }
+
         }
 
         return sprintf('(%s)', implode(',', $fakedRow));
