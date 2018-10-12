@@ -89,13 +89,13 @@ class MysqlDumperCommand extends Command
 
             $output->write("\n\n/** begin TABLE {$table->getName()}  */\n");
 
-            if (! $input->hasOption('skip-drop-table')) {
+            if (! $input->getOption('skip-drop-table')) {
                 $output->writeln($table->getDropTable());
             } else {
                 $output->write("/**  skip-drop-table {$table->getName()}  */\n");
             }
 
-            if (! $input->hasOption('skip-create-table')) {
+            if (! $input->getOption('skip-create-table')) {
                 $output->writeln($table->getCreateTable());
             } else {
                 $output->write("/**  skip-create-table {$table->getName()}  */\n");
