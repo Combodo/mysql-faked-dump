@@ -61,8 +61,8 @@ class TableInsertInto
 
         if ($this->rules['preserve_filter'] ?? false) {
             $this->insertIntoValuesSqlCollection = [
-                'preserved' => sprintf("SELECT %s FROM `%s` WHERE %s",       $this->getInsertIntoSelectedColumns(true),  $this->name, $this->rules['preserve_filter']),
-                'faked' => sprintf("SELECT %s FROM `%s` WHERE NOT(%s)",  $this->getInsertIntoSelectedColumns(false), $this->name, $this->rules['preserve_filter']),
+                'preserved' => sprintf("SELECT %s FROM `%s` WHERE %s",       $this->getInsertIntoSelectedColumns(true),  $this->name, $this->rules['preserve_filter']['preserve']),
+                'faked' => sprintf("SELECT %s FROM `%s` WHERE %s",  $this->getInsertIntoSelectedColumns(false), $this->name, $this->rules['preserve_filter']['reverse']),
             ];
         } else {
             $this->insertIntoValuesSqlCollection = [
