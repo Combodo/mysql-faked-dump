@@ -11,6 +11,7 @@ namespace App\Command;
 use App\DataSource\PdoDataSource;
 use App\Loader\TablesLoader;
 use App\Loader\YamlConfigLoader;
+use App\Table\Table;
 use App\Table\TableInsertInto;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -80,12 +81,12 @@ class MysqlDumperCommand extends Command
         foreach ($tablesCollection as $table) {
 
             if ($table->isExcluded()) {
-                $io->getErrorStyle()->writeln("- skipping table {$table->getName()}");
+                $io->getErrorStyle()->writeln("- skipping {$table->getName()}");
                 $output->write("\n/**  skipping excluded {$table->getName()}  */\n\n");
                 continue;
             }
 
-            $io->getErrorStyle()->write(str_pad("+ dumping table {$table->getName()}", 55, ' '));
+            $io->getErrorStyle()->write(str_pad("+ dumping {$table->getName()}", 55, ' '));
 
             $output->write("\n\n/** begin TABLE {$table->getName()}  */\n");
 
@@ -101,24 +102,18 @@ class MysqlDumperCommand extends Command
                 $output->write("/**  skip-create-table {$table->getName()}  */\n");
             }
 
-            /** @var TableInsertInto $insertInto */
-            $insertInto = $table->getInsertInto();
 
-            $rowCount = 0;
-            while ($value = $insertInto->nextValue()) {
-                if ($rowCount > 0) {
-                    $output->write(",$value");
-                } else {
-                    $output->write($insertInto->getInsertIntoBeginningString());
-                    $output->write($value);
-                }
-                $rowCount++;
+            $rowCountPreserved = $this->writeInsertInto(false, $table, $output);
+            $rowCountFaked = $this->writeInsertInto(true, $table, $output);
+
+            $rowCount = $rowCountPreserved + $rowCountFaked;
+
+            if ($rowCountPreserved > 0) {
+                $io->getErrorStyle()->writeln("| $rowCount rows (including $rowCountPreserved preserved)");
+            } else {
+                $io->getErrorStyle()->writeln("| $rowCount rows");
             }
-            if ($rowCount > 0) {
-                $output->write(";\n");
-            }
-            $output->write("/** finished TABLE {$table->getName()} $rowCount rows dumped */\n");
-            $io->getErrorStyle()->writeln("| $rowCount rows");
+
 
         }
 
@@ -129,5 +124,38 @@ class MysqlDumperCommand extends Command
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;");
 
         $io->getErrorStyle()->writeln("\nDone.\n\n");
+    }
+
+    private function writeInsertInto(bool $getFakedValues, Table $table, OutputInterface $output)
+    {
+        if ($getFakedValues) {
+            $getter = "nextFakedValue";
+        } else {
+            $getter = "nextPreservedValue";
+        }
+
+        /** @var TableInsertInto $insertInto */
+        $insertInto = $table->getInsertInto();
+
+        $rowCount = 0;
+        $maxBulkSize = 100;
+        while ($value = $insertInto->$getter()) {
+            if ($rowCount % $maxBulkSize != 0) {
+                $output->write(",$value");
+            } else {
+                if ($rowCount > 0) {
+                    $output->write(";\n/* split {$table->getName()} at {$rowCount}th row because maxBulkSize $maxBulkSize   */\n");
+                }
+                $output->write($insertInto->getInsertIntoBeginningString());
+                $output->write($value);
+            }
+            $rowCount++;
+        }
+        if ($rowCount > 0) {
+            $output->write(";\n");
+        }
+        $output->write("/** finished {$table->getName()} $rowCount rows dumped */\n");
+
+        return $rowCount;
     }
 }

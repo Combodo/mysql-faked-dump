@@ -18,8 +18,8 @@ class TableInsertInto
     private $name;
     /**  @var array */
     private $rules;
-    /** @var \PDOStatement */
-    private $insertIntoValuesStmt;
+    /** @var \PDOStatement[] */
+    private $insertIntoValuesStmtCollection;
     /** @var string */
     private $insertIntoBeginningString;
     /** @var PdoDataSource */
@@ -30,6 +30,8 @@ class TableInsertInto
      * @var Generator
      */
     private $fakerGenerator;
+    /** @var string[] */
+    private $insertIntoValuesSqlCollection;
 
     public function __construct(string $name, array $rules, PdoDataSource $dataSource, Generator $fakerGenerator)
     {
@@ -57,16 +59,20 @@ class TableInsertInto
 
         $this->insertIntoBeginningString = sprintf("INSERT INTO `%s` (%s) VALUES ", $this->name, implode(',', $this->columns['escaped']));
 
-        $this->insertIntoValuesStmt = $this->dataSource->getPdo()->query(
-            sprintf(
-                "SELECT %s FROM `%s`",
-                implode(
-                    ',',
-                    $this->getInsertIntoSelectedColumns()
-                ),
-                $this->name
-            )
-        );
+        if ($this->rules['preserve_filter'] ?? false) {
+            $this->insertIntoValuesSqlCollection = [
+                'preserved' => sprintf("SELECT %s FROM `%s` WHERE %s",       $this->getInsertIntoSelectedColumns(true),  $this->name, $this->rules['preserve_filter']),
+                'faked' => sprintf("SELECT %s FROM `%s` WHERE NOT(%s)",  $this->getInsertIntoSelectedColumns(false), $this->name, $this->rules['preserve_filter']),
+            ];
+        } else {
+            $this->insertIntoValuesSqlCollection = [
+                'faked' =>  sprintf("SELECT %s FROM `%s`", $this->getInsertIntoSelectedColumns(), $this->name),
+            ];
+        }
+
+        foreach ($this->insertIntoValuesSqlCollection as $collectionName => $sql) {
+            $this->insertIntoValuesStmtCollection[$collectionName] = $this->dataSource->getPdo()->query($sql);
+        }
     }
 
 
@@ -76,12 +82,16 @@ class TableInsertInto
         return $this->rules['columns'][$column] ?? null;
     }
 
-    private function getInsertIntoSelectedColumns()
+    private function getInsertIntoSelectedColumns(bool $preserverAll = false, ?string $implodeStr = ',')
     {
         $columnsSelected = [];
         foreach ($this->columns['raw'] as $column) {
-            $columnRule = $this->getColumnRule($column);
+            if ($preserverAll) {
+                $columnsSelected[] = "`$column`";
+                continue;
+            }
 
+            $columnRule = $this->getColumnRule($column);
             if ($columnRule['empty'] ?? false) {
                 continue;
             }
@@ -92,7 +102,11 @@ class TableInsertInto
             $columnsSelected[] = "`$column`";
         }
 
-        return $columnsSelected;
+        if (empty($implodeStr)) {
+            return $columnsSelected;
+        }
+
+        return implode($implodeStr, $columnsSelected);
     }
 
 
@@ -104,10 +118,36 @@ class TableInsertInto
         return $this->insertIntoBeginningString;
     }
 
-    public function nextValue(): ?string
+
+    /**
+     * @return bool|string
+     */
+    public function nextPreservedValue()
+    {
+        if (!isset($this->insertIntoValuesStmtCollection['preserved'])) {
+            return false;
+        }
+        $preservedRow = [];
+        $row = $this->insertIntoValuesStmtCollection['preserved']->fetch(\PDO::FETCH_ASSOC);
+        if (!$row) {
+            unset($this->insertIntoValuesStmtCollection['preserved']);
+            return false;
+        }
+
+        foreach ($this->columns['raw'] as $columnName) {
+            $preservedRow[$columnName] = $this->dataSource->getPdo()->quote($row[$columnName]);
+        }
+
+        return sprintf('(%s)', implode(',', $preservedRow));
+    }
+
+    /**
+     * @return bool|string
+     */
+    public function nextFakedValue()
     {
         $fakedRow = [];
-        $row = $this->insertIntoValuesStmt->fetch(\PDO::FETCH_ASSOC);
+        $row = $this->insertIntoValuesStmtCollection['faked']->fetch(\PDO::FETCH_ASSOC);
         if (!$row) {
             return false;
         }
