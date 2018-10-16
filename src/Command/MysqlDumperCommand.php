@@ -138,7 +138,7 @@ class MysqlDumperCommand extends Command
         $insertInto = $table->getInsertInto();
 
         $rowCount = 0;
-        $maxBulkSize = 100;
+        $maxBulkSize = 500;
         while ($value = $insertInto->$getter()) {
             if ($rowCount % $maxBulkSize != 0) {
                 $output->write(",$value");
