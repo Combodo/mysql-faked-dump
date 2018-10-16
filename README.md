@@ -1,7 +1,7 @@
 # Mysql faked dump *ALPHA*
 Create censored dump with a finger snap!
 
-:no_entry_sign *This tool is an alpha version and should not be used.*
+:no_entry_sign: *This tool is an alpha version and should not be used.*
 
 ## prerequisite
 in order to install the dependencies, you need `composer`, and has this tool rely on symfony 4, you need at least `php 7.1`.
