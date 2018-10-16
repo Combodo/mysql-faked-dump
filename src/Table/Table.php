@@ -9,6 +9,7 @@ namespace App\Table;
 
 
 use App\DataSource\PdoDataSource;
+use App\Faker\FakerAccessor;
 use Faker\Generator;
 
 class Table
@@ -21,32 +22,28 @@ class Table
      * @var PdoDataSource
      */
     private $dataSource;
-    /**
-     * @var Generator|null
-     */
-    private $fakerGenerator;
+
     /**
      * @var TableInsertInto
      */
     private $insertInto;
+    /**
+     * @var FakerAccessor
+     */
+    private $fakerAccessor;
 
-    public function __construct(string $name, array $config, PdoDataSource $dataSource, ?Generator $fakerGenerator = null, ?TableInsertInto $insertInto = null)
+    public function __construct(string $name, array $config, PdoDataSource $dataSource, FakerAccessor $fakerAccessor, ?TableInsertInto $insertInto = null)
     {
         $this->name = $name;
         $this->rules = $this->extractRulesFromConfig($config);
         $this->dataSource = $dataSource;
-
-
-        $this->fakerGenerator = $fakerGenerator;
-        if (! $this->fakerGenerator instanceof Generator) {
-            $this->fakerGenerator = \Faker\Factory::create();
-        }
-
+        $this->fakerAccessor = $fakerAccessor;
 
         $this->insertInto = $insertInto;
         if (!$this->insertInto instanceof TableInsertInto) {
-            $this->insertInto = new  TableInsertInto($this->name, $this->rules, $this->dataSource, $this->fakerGenerator);
+            $this->insertInto = new  TableInsertInto($this->name, $this->rules, $this->dataSource, $this->fakerAccessor);
         }
+
 
     }
 

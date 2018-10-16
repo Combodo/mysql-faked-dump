@@ -107,6 +107,9 @@
     "symfony/http-kernel": {
         "version": "v4.1.6"
     },
+    "symfony/inflector": {
+        "version": "v4.1.6"
+    },
     "symfony/monolog-bridge": {
         "version": "v4.1.6"
     },
@@ -127,6 +130,9 @@
     },
     "symfony/profiler-pack": {
         "version": "v1.0.3"
+    },
+    "symfony/property-access": {
+        "version": "v4.1.6"
     },
     "symfony/routing": {
         "version": "4.0",

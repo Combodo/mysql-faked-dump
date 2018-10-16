@@ -9,6 +9,7 @@ namespace App\Table;
 
 
 use App\DataSource\PdoDataSource;
+use App\Faker\FakerAccessor;
 use Faker\Generator;
 
 class TableInsertInto
@@ -26,19 +27,17 @@ class TableInsertInto
     private $dataSource;
     /** @var array */
     private $columns;
-    /**
-     * @var Generator
-     */
-    private $fakerGenerator;
+    /** @var FakerAccessor */
+    private $fakerAccessor;
     /** @var string[] */
     private $insertIntoValuesSqlCollection;
 
-    public function __construct(string $name, array $rules, PdoDataSource $dataSource, Generator $fakerGenerator)
+    public function __construct(string $name, array $rules, PdoDataSource $dataSource, FakerAccessor $fakerAccessor)
     {
         $this->name = $name;
         $this->rules = $rules;
         $this->dataSource = $dataSource;
-        $this->fakerGenerator = $fakerGenerator;
+        $this->fakerAccessor = $fakerAccessor;
 
         $this->initInsertInto();
     }
@@ -165,7 +164,7 @@ class TableInsertInto
             }
             if ($columnRule['faker'] ?? false) {
                 $fakedRow[$columnName] =  $this->dataSource->getPdo()->quote(
-                    $this->fakerGenerator->{$columnRule['faker']}
+                    $this->fakerAccessor->get($columnRule['faker'])
                 );
                 foreach ($columnRule['alias'] ?? [] as $alias) {
                     $fakedRow[$alias] = $fakedRow[$columnName];

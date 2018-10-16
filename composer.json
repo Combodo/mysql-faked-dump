@@ -9,6 +9,7 @@
         "symfony/console": "*",
         "symfony/flex": "^1.1",
         "symfony/framework-bundle": "*",
+        "symfony/property-access": "*",
         "symfony/yaml": "*"
     },
     "require-dev": {
