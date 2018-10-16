@@ -136,9 +136,9 @@ class TableInsertInto
 
         foreach ($this->columns['raw'] as $columnName) {
             if (null === $row[$columnName]) {
-                $fakedRow[$columnName] = 'NULL';
+                $preservedRow[$columnName] = 'NULL';
             } else {
-                $fakedRow[$columnName] = $this->dataSource->getPdo()->quote($row[$columnName]);
+                $preservedRow[$columnName] = $this->dataSource->getPdo()->quote($row[$columnName]);
             }
         }
 
