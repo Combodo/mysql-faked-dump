@@ -103,8 +103,8 @@ class MysqlDumperCommand extends Command
             }
 
 
-            $rowCountPreserved = $this->writeInsertInto(false, $table, $output);
-            $rowCountFaked = $this->writeInsertInto(true, $table, $output);
+            $rowCountPreserved  = $this->writeInsertInto(false, $table, $output);
+            $rowCountFaked      = $this->writeInsertInto(true, $table, $output);
 
             $rowCount = $rowCountPreserved + $rowCountFaked;
 
@@ -148,6 +148,7 @@ class MysqlDumperCommand extends Command
                 }
                 $output->write($insertInto->getInsertIntoBeginningString());
                 $output->write($value);
+                usleep(100000); //100ms
             }
             $rowCount++;
         }
